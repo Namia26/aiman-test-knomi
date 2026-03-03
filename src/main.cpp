@@ -1,16 +1,19 @@
 #include <Arduino.h>
 #include "tft_setup.h"
 #include <TFT_eSPI.h>
-
-#define LCD_BL_PIN 12
+#include "pins.h"
+#include <CST816S.h>
 
 TFT_eSPI tft;
+CST816S touch(PIN_I2C0_SDA, PIN_I2C0_SCL, PIN_TOUCH_RST, PIN_TOUCH_IRQ);
 static int8_t bl_level = -1;
+static bool inverted = true;
+static uint32_t last_touch_ms = 0;
 
 void tft_backlight_init()
 {
-    pinMode(LCD_BL_PIN, OUTPUT);
-    digitalWrite(LCD_BL_PIN, LOW);
+    pinMode(PIN_LCD_BL, OUTPUT);
+    digitalWrite(PIN_LCD_BL, LOW);
     delay(3);
     bl_level = 0;
 }
@@ -25,14 +28,14 @@ void tft_set_backlight(int8_t to)
         return;
     if (to == 0)
     {
-        digitalWrite(LCD_BL_PIN, LOW);
+        digitalWrite(PIN_LCD_BL, LOW);
         delay(3);
         bl_level = 0;
         return;
     }
     if (bl_level <= 0)
     {
-        digitalWrite(LCD_BL_PIN, HIGH);
+        digitalWrite(PIN_LCD_BL, HIGH);
         delayMicroseconds(25);
         bl_level = 16;
     }
@@ -41,9 +44,9 @@ void tft_set_backlight(int8_t to)
     int8_t p = bl_level - to;
     for (int8_t i = 0; i < p; i++)
     {
-        digitalWrite(LCD_BL_PIN, LOW);
+        digitalWrite(PIN_LCD_BL, LOW);
         delayMicroseconds(1);
-        digitalWrite(LCD_BL_PIN, HIGH);
+        digitalWrite(PIN_LCD_BL, HIGH);
         delayMicroseconds(1);
     }
     bl_level = to;
@@ -51,8 +54,10 @@ void tft_set_backlight(int8_t to)
 
 void setup()
 {
+    touch.begin();
+
     tft.begin();
-    tft.invertDisplay(1);
+    tft.invertDisplay(inverted);
     tft.fillScreen(TFT_BLACK);
 
     tft_backlight_init();
@@ -66,4 +71,9 @@ void setup()
 
 void loop()
 {
+    if (touch.available() && (millis() - last_touch_ms > 300)) {
+        last_touch_ms = millis();
+        inverted = !inverted;
+        tft.invertDisplay(inverted);
+    }
 }

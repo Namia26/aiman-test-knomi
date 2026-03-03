@@ -25,6 +25,7 @@
 #define LOAD_FONT6
 #define LOAD_FONT7
 #define LOAD_FONT8
+#define LOAD_GFXFF   // FreeFonts (setFreeFont)
 
 // SPI speed
 #define SPI_FREQUENCY       80000000
